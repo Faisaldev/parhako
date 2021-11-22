@@ -11,8 +11,8 @@ export async function sendEmail(to: string, html: string) {
   let transporter = nodemailer.createTransport({
     service: 'gmail',
     auth: {
-      user: 'faysal.online80@gmail.com',
-      pass: 'My0nline@pple7',
+      user: process.env.NODE_MAILER_USER,
+      pass: process.env.NODE_MAILER_PWD,
     },
   });
 

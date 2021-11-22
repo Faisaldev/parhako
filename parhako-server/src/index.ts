@@ -1,24 +1,38 @@
-import { MikroORM } from '@mikro-orm/core';
 import { ApolloServerPluginLandingPageGraphQLPlayground } from 'apollo-server-core';
 import { ApolloServer } from 'apollo-server-express';
 import connectRedis from 'connect-redis';
 import cors from 'cors';
+import env from 'dotenv';
 import express from 'express';
 import session from 'express-session';
 import Redis from 'ioredis';
+import path from 'path';
 import 'reflect-metadata';
 import { buildSchema } from 'type-graphql';
+import { createConnection } from 'typeorm';
 import { COOKIE_NAME, PROD } from './constants';
-import mikroconfig from './mikro-orm.config';
+import { Post } from './entities/Post';
+import { User } from './entities/User';
 import { HelloResolver } from './resolvers/hello';
 import { PostResolver } from './resolvers/post';
 import { UserResolver } from './resolvers/user';
-('ioredis');
+
+env.config({
+  path: path.join(__dirname, './configs/.env'),
+});
 
 const main = async () => {
-  const orm = await MikroORM.init(mikroconfig);
-  await orm.getMigrator().up();
-
+  const conn = await createConnection({
+    type: 'postgres',
+    database: 'parhako2',
+    username: 'faysal',
+    logging: !PROD,
+    synchronize: !PROD,
+    migrations: [path.join(__dirname, './migrations/*')],
+    entities: [Post, User],
+  });
+  await conn.runMigrations();
+  //await Post.delete({});
   const app = express();
 
   const RedisStore = connectRedis(session);
@@ -55,7 +69,7 @@ const main = async () => {
       resolvers: [HelloResolver, PostResolver, UserResolver],
       validate: false,
     }),
-    context: ({ req, res }) => ({ em: orm.em, req, res, redis }),
+    context: ({ req, res }) => ({ req, res, redis }),
     plugins: [ApolloServerPluginLandingPageGraphQLPlayground],
   });
 

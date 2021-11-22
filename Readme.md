@@ -64,3 +64,8 @@
 
 1. obsolete redis package install _npm i_ ioredis
 2. For token generation _npm i_ uuid
+
+## Install TypeORM
+
+1. install type orm _npm i_ typeorm
+2. Create Migration _npx_ typeorm migration:create -n FakePosts
