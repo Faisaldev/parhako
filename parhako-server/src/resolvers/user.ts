@@ -3,10 +3,12 @@ import {
   Arg,
   Ctx,
   Field,
+  FieldResolver,
   Mutation,
   ObjectType,
   Query,
   Resolver,
+  Root,
 } from 'type-graphql';
 import { getConnection } from 'typeorm';
 import { v4 } from 'uuid';
@@ -36,8 +38,16 @@ class UserResponse {
   user?: User;
 }
 
-@Resolver()
+@Resolver(User)
 export class UserResolver {
+  @FieldResolver(() => String)
+  email(@Root() user: User, @Ctx() { req }: MyContext) {
+    if (req.session.userId === user.id) {
+      return user.email;
+    }
+    return '';
+  }
+
   @Mutation(() => UserResponse)
   async changePassword(
     @Arg('token') token: string,
@@ -159,7 +169,19 @@ export class UserResolver {
 
       user = result.raw[0];
     } catch (err: any) {
-      if (err.code === '23505') {
+      if (err.code === '23505' && err.detail.includes('Key (email)')) {
+        return {
+          errors: [
+            {
+              field: 'email',
+              message: 'email already exist.',
+            },
+          ],
+        };
+      } else if (
+        err.code === '23505' &&
+        err.detail.includes('Key (username)')
+      ) {
         return {
           errors: [
             {
